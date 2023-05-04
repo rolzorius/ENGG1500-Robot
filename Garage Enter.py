@@ -70,25 +70,22 @@ def Welcome_Home():     # Runs after it has Returned to where it Believes the Ga
         setServoAngle(90)
         sleep(0.5)
         pwm_servo.duty_u16(0)
-    if dist_R and dist_L < 200:     # Checks there is a wall on either side of the bot, If true Garage Found
-        RGB_Measure = proximity_measurement = apds9960.prox.proximityLevel
-
-        if RGB_Measure > 10:     # Value must be finalised, Checking to see if it will hit the wall.
-            Left_Motor.set_forwards()
-            Right_Motor.set_forwards()
-
-            # driving forwards into the garage
-            encCountL = enc.get_left()
-            encCountR = enc.get_right()
-            pwmL = 45 + 3 * (encCountR - encCountL)
-            pwmR = 45 + 3 * (encCountL - encCountR)
-            Left_Motor.duty(pwmL)
-            Right_Motor.duty(pwmR)
+        if dist_R and dist_L < 200:     # Checks there is a wall on either side of the bot, If true Garage Found
             RGB_Measure = proximity_measurement = apds9960.prox.proximityLevel
 
-        else:
-            Left_Motor.duty(0)
-            Right_Motor.duty(0)
+            if RGB_Measure > 10:     # Value must be finalised, Checking to see if it will hit the wall.
+                Left_Motor.set_forwards()
+                Right_Motor.set_forwards()
+
+                # driving forwards into the garage
+                encCountL = enc.get_left()
+                encCountR = enc.get_right()
+                pwmL = 45 + 3 * (encCountR - encCountL)
+                pwmR = 45 + 3 * (encCountL - encCountR)
+                Left_Motor.duty(pwmL)
+                Right_Motor.duty(pwmR)
+                RGB_Measure = proximity_measurement = apds9960.prox.proximityLevel
+
 
     # Drives Forwards while it cant see a line or a wall
     Left_Motor.set_forwards()
@@ -105,7 +102,7 @@ def Welcome_Home():     # Runs after it has Returned to where it Believes the Ga
 
 
 
-def Leaving_Home():     # Runs when the Bot starts
+def Leaving_Home():     # first thing that Runs when the Bot starts
     dist_F = ultrasonic_sensor.distance_mm()    # Find Front Wall
     setServoAngle(90)
     encLeft = 0
