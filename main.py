@@ -225,17 +225,35 @@ def wall_follow():
         else:
             print("help")
 
-#def line_follow(): # TODO this needs to be developed
+def line_follow(): # TODO this needs to be developed
+
+    while True:
+        sens_input()
+        if VCP.ir_sens_readL == 1:
+            Left_Motor.set_forwards()
+            Right_Motor.set_forwards()
+            Left_Motor.duty(0)
+            Right_Motor.duty(50)
+
+        elif VCP.ir_sens_readL == 1:
+            move_forward()
+
+        elif VCP.ir_sens_readR == 1:
+            Left_Motor.set_forwards()
+            Right_Motor.set_forwards()
+            Left_Motor.duty(50)
+            Right_Motor.duty(0)
 
 
 # variables that need retained value in loops
-pwm_left = 0
-pwm_right = 0
 dir_left = 0
 dir_right = 0
 servo_position = 0
 goal_count = 0
 direction = 0
+action = 0
+
+# # ----------------------------- state machine code starts here ----------------------------- # #
 
 # Declare states
 state_list = {0: 'Stopped', 1: 'Driving', 2: 'Reversing', 3: 'Wall_Follow', 4: 'Line_Follow', 5: 'Hallway',
@@ -245,13 +263,14 @@ state_list = {0: 'Stopped', 1: 'Driving', 2: 'Reversing', 3: 'Wall_Follow', 4: '
 state = state_list[8]
 print("Current state is '{}'".format(state))    # TODO Update to OLED
 
-while True:
+
+while True:             # # ----- States and transition conditions ----- # #
     servo_sweep()
     sens_input()
 
     if state == 'Start':       # state 8
-        dir_left = 'at_rest'
-        dir_right = 'at_rest'
+        dir_left = 'stop'
+        dir_right = 'stop'
         sleep(3)                    # 3 seconds of nothing then
         # servo_sweep()
         state = state_list[1]       # changes state from Stopped to Driving
@@ -267,24 +286,26 @@ while True:
             state = state_list[4]  # switch to LINE_Follow
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
-            if VCP.US_distR >= 250:  # check US right dist > if greater than 250 check US left dist
-                if VCP.US_distL >= 250:  # if greater than 250
-                    state = state_list[2]  # reverse
-                    print("State changed to '{}'!".format(state))  # TODO Update to OLED
+        elif VCP.US_distR >= 250 or VCP.US_distL >= 250:  # check US right/left dist if >= 250 then reverse
+            state = state_list[2]  # reverse
+            print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+
 
     if state == 'Driving':          # state 1
         print("Current state is '{}'".format(state))    # TODO Update to OLED
         dir_left = 'fwd'
         dir_right = 'fwd'
+
         if VCP.ir_sens_readL or VCP.ir_sens_readC or VCP.ir_sens_readR:
             state = state_list[4]  # SWITCH TO LINE_FOLLOW
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
-        if VCP.rgb_prox >= 5:
+        elif VCP.rgb_prox >= 5:
             state = state_list[0]  # STOPS on obstacle detection
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
-        if VCP.US_distL <= 250 or VCP.US_distR <= 250:
+        elif VCP.US_distL <= 250 or VCP.US_distR <= 250:
             state = state_list[3]  # SWITCH TO WALL_FOLLOW
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
@@ -297,26 +318,62 @@ while True:
             state = state_list[4]  # SWITCH TO LINE_FOLLOW
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
-        if VCP.US_distL <= 300 or VCP.US_distR <= 300:
+        elif VCP.US_distL <= 300 or VCP.US_distR <= 300:
             state = state_list[3]  # SWITCH TO WALL_FOLLOW
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
-        if VCP.ir_sens_readC == 0:
+        elif VCP.ir_sens_readC == 0:
             if VCP.US_distF > 300:
                 state = state_list[1]
                 print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+        # this will initiate pivot function and turn 180.
+        sleep(1)
+        dir_left = 'rev'
+        dir_right = 'fwd'
+        sleep(1)
+        state = state_list[1] # SWITCH TO DRIVING
+
 
     if state == 'Wall_Follow':          # state 3
         print("Current state is '{}'".format(state))    # TODO Update to OLED
         Left_Motor.set_forwards()
         Right_Motor.set_forwards()
-        # wall_follow()
+        action = 'wall_follow'
+
+        if VCP.ir_sens_readL or VCP.ir_sens_readC or VCP.ir_sens_readR:
+            state = state_list[4]  # SWITCH TO LINE_FOLLOW
+            print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+
+        if VCP.ir_sens_readC == 0:
+            if VCP.US_disL > 300 and VCP.US_distR > 300:
+                state = state_list[1] # switch to drive
+                print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+
+        if VCP.rgb_prox >= 5:
+            state = state_list[0]  # STOPS on obstacle detection
+            print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
 
     if state == 'Line_Follow':          # state 4   # TODO THIS NEEDS EXPANDING
         print("Current state is '{}'".format(state))
         Left_Motor.set_forwards()
         Right_Motor.set_forwards()
+        action = 'line_follow'
+
+        if VCP.ir_sens_readC == 0:
+            if VCP.US_disL > 300 and VCP.US_distR > 300:
+                state = state_list[1]  # switch to drive
+                print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+        if VCP.rgb_prox >= 5:
+            state = state_list[0]  # STOPS on obstacle detection
+            print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+
+
 
     if state == 'Hallway':              # state 5
         print("Current state is '{}'".format(state))    # TODO Update to OLED
@@ -334,26 +391,35 @@ while True:
 
 # # ------------------------------- Start of control logic ------------------------------- # #
 
-    ######################################
     if dir_left == 'fwd' and dir_right == 'fwd':
         move_forward()
 
     if dir_left == 'rev' and dir_right == 'rev':
         enc.clear_count()
-        while VCP.encAverage <= 20:
+        while VCP.encAverage <= 20:   # Does this enc.Average work as expected??
             move_backward()
-        dir_right = 'fwd'
 
-    if dir_left == 'at_rest' and dir_right == 'at_rest':
+
+    if dir_left == 'stop' and dir_right == 'stop':
         full_stop()
 
     if dir_left == 'rev' and dir_right == 'fwd':
+        enc.clear_count()
         static_pivot_l()
+        sleep(1)
+
+    if action == 'wall_follow':
+        wall_follow()
+
+    if action == 'line_follow':
+        line_follow()
+        
 
 
 
 
-######################################################################################## BACKUP CODE
+
+######################################### BACKUP CODE ###############################################
 #
     # if state == 'Start':
     #     sleep(3)  # 3 seconds of nothing then
