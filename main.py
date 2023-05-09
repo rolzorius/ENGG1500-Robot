@@ -84,9 +84,10 @@ def move_forward():         # Used for any time the bot MOVES FORWARD ONLY
     if VCP.encCountL <= 10:
         Left_Motor.duty(50)
     if VCP.encCountR <= 10:
-        Right_Motor.duty(5)
-    Left_Motor.duty(VCP.LeftLinearPWM)
-    Right_Motor.duty(VCP.RightLinearPWM)
+        Right_Motor.duty(50)
+    else:
+        Left_Motor.duty(VCP.LeftLinearPWM)
+        Right_Motor.duty(VCP.RightLinearPWM)
 
 def move_backward():        # Used any time the bot MOVES BACKWARD ONLY
     Left_Motor.set_backwards()
@@ -244,6 +245,122 @@ def line_follow(): # TODO this needs to be developed
             Left_Motor.duty(50)
             Right_Motor.duty(0)
 
+ # TODO Check this code out - test
+def Welcome_Home():     # Runs after it has Returned to where it Believes the Garage is. Should play after line ends
+    servo_sweep()
+    encLeft = 0
+    encRight = 0
+    while VCP.US_distF < 200:   # Checks there is a wall in front of the goggles
+        setServoAngle(15)
+        sleep(0.5)
+
+        pwm_servo.duty_u16(0)
+        sleep(2)
+        setServoAngle(165)
+        sleep(0.5)
+
+        pwm_servo.duty_u16(0)
+        sleep(2)
+        setServoAngle(90)
+        sleep(0.5)
+        pwm_servo.duty_u16(0)
+
+    if VCP.US_distR < 200 and VCP.US_distL < 200:     # Checks there is a wall on either side of the bot, If true Garage Found
+        RGB_Measure = proximity_measurement = apds9960.prox.proximityLevel
+
+        if RGB_Measure > 5:     # Value must be finalised, Checking to see if it will hit the wall.
+            move_forward()
+
+            # driving forwards into the garage
+            encCountL = enc.get_left()
+            encCountR = enc.get_right()
+            pwmL = 45 + 3 * (encCountR - encCountL)
+            pwmR = 45 + 3 * (encCountL - encCountR)
+            Left_Motor.duty(pwmL)
+            Right_Motor.duty(pwmR)
+            RGB_Measure = proximity_measurement = apds9960.prox.proximityLevel
+
+        else:
+            Left_Motor.duty(0)
+            Right_Motor.duty(0)
+
+    # Drives Forwards while it cant see a line or a wall # TODO
+
+ # TODO Check this code out too - test
+def Leaving_Home():     # Runs when the Bot starts
+    dist_F = ultrasonic_sensor.distance_mm()    # Find Front Wall
+    setServoAngle(90)
+    encLeft = 0
+    encRight = 0
+
+    setServoAngle(15)   # Find Right Wall
+    sleep(0.5)
+    dist_R = ultrasonic_sensor.distance_mm()
+
+    pwm_servo.duty_u16(0)   #Find left Wall
+    sleep(2)
+    setServoAngle(170)
+    sleep(0.5)
+    dist_L = ultrasonic_sensor.distance_mm()
+
+    pwm_servo.duty_u16(0)   # go back to facing front
+    sleep(2)
+    setServoAngle(90)
+    sleep(0.5)
+    pwm_servo.duty_u16(0)
+
+    ir_sens_readC = IR_sensorC.value()
+    if dist_F and dist_L and dist_R < 250:  # Checks there is a wall in front of the goggles, If true, facing backwards
+        setServoAngle(90)
+        dist_F = ultrasonic_sensor.distance_mm()
+        setServoAngle(15)  # Find Right Wall
+        sleep(0.5)
+        dist_R = ultrasonic_sensor.distance_mm()
+
+        pwm_servo.duty_u16(0)  # Find left Wall
+        sleep(2)
+        setServoAngle(170)
+        sleep(0.5)
+        dist_L = ultrasonic_sensor.distance_mm()
+
+        pwm_servo.duty_u16(0)  # go back to facing front
+        sleep(2)
+        setServoAngle(90)
+        sleep(0.5)
+        pwm_servo.duty_u16(0)
+        if dist_F and dist_L and dist_R != 0:   # While it reads a value for the Garage
+            Left_Motor.set_backwards()      # Books it backwards until it is out of the garage
+            Right_Motor.set_backwards()
+
+            # balanced PWM output using encoder
+            encCountL = enc.get_left()
+            encCountR = enc.get_right()
+            pwmL = 45 + 3 * (encCountR - encCountL)
+            pwmR = 45 + 3 * (encCountL - encCountR)
+            Left_Motor.duty(pwmL)
+            Right_Motor.duty(pwmR)
+            dist_F = ultrasonic_sensor.distance_mm()    # Find Front wall
+
+            setServoAngle(15)  # Find Right Wall
+            sleep(0.5)
+            dist_R = ultrasonic_sensor.distance_mm()
+
+            pwm_servo.duty_u16(0)  # Find left Wall
+            sleep(2)
+            setServoAngle(170)
+            sleep(0.5)
+            dist_L = ultrasonic_sensor.distance_mm()
+
+            pwm_servo.duty_u16(0)  # go back to facing front
+            sleep(2)
+            setServoAngle(90)
+            sleep(0.5)
+            pwm_servo.duty_u16(0)
+
+        else:
+            Left_Motor.set_forwards()
+            Right_Motor. set_forwards()
+            #SPIN BOT!!!!!!!!!!!!!!!!!!!!
 
 # variables that need retained value in loops
 dir_left = 0
