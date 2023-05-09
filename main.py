@@ -164,6 +164,8 @@ def servo_sweep():
 
 
 
+
+
 def wall_follow():
     Left_Motor.duty(0)
     Right_Motor.duty(0)
@@ -266,7 +268,6 @@ def Welcome_Home():     # Runs after it has Returned to where it Believes the Ga
         pwm_servo.duty_u16(0)
 
     if VCP.US_distR < 200 and VCP.US_distL < 200:     # Checks there is a wall on either side of the bot, If true Garage Found
-        RGB_Measure = proximity_measurement = apds9960.prox.proximityLevel
 
         if VCP.rgb_prox <= 0:     # Value must be finalised, Checking to see if it will hit the wall.
             move_forward()
@@ -274,6 +275,7 @@ def Welcome_Home():     # Runs after it has Returned to where it Believes the Ga
         else:
             Left_Motor.duty(0)
             Right_Motor.duty(0)
+        print('Welcome Home bitches')
 
     # Drives Forwards while it cant see a line or a wall # TODO
 
@@ -404,7 +406,9 @@ while thru_count <= 100:             # # ----- States and transition conditions 
 
 
     if state == 'Driving':          # state 1
+        servo_sweep()
         sens_input()
+
         print(VCP.ir_sens_readC, VCP.ir_sens_readR, VCP.ir_sens_readL)
         print("Current state is '{}'".format(state))    # TODO Update to OLED
         dir_left = 'fwd'
@@ -421,6 +425,9 @@ while thru_count <= 100:             # # ----- States and transition conditions 
         elif 0 < VCP.US_distL <= 250 or 0 < VCP.US_distR <= 250:
             state = state_list[3]  # SWITCH TO WALL_FOLLOW
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
+
+        elif VCP.US_distL <= 250 and 0 < VCP.US_distR <= 250 and VCP.US_distF <=250:
+            Welcome_Home()
         sens_input()
 
 
@@ -474,8 +481,11 @@ while thru_count <= 100:             # # ----- States and transition conditions 
         sens_input()
 
 
+
     if state == 'Line_Follow':          # state 4   # TODO THIS NEEDS EXPANDING
+        servo_sweep()
         sens_input()
+
         print("Current state is '{}'".format(state))
         Left_Motor.set_forwards()
         Right_Motor.set_forwards()
@@ -518,6 +528,7 @@ while thru_count <= 100:             # # ----- States and transition conditions 
 # # ------------------------------- Start of control logic ------------------------------- # #
 
     if dir_left == 'fwd' and dir_right == 'fwd':
+        servo_sweep()
         move_forward()
 
     if dir_left == 'rev' and dir_right == 'rev':
@@ -534,88 +545,13 @@ while thru_count <= 100:             # # ----- States and transition conditions 
         sleep(1)
 
     if action == 'wall_follow':
+        servo_sweep()
+        sens_input()
         wall_follow()
 
     if action == 'line_follow':
+        servo_sweep()
+        sens_input()
         line_follow()
 
     thru_count = 0
-
-
-
-
-######################################### BACKUP CODE ###############################################
-#
-    # if state == 'Start':
-    #     sleep(3)  # 3 seconds of nothing then
-    #     state = state_list[1]  # changes state from Stopped to Driving
-    #     print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    # if state == 'Stopped':
-    #     print("Current state is '{}'".format(state))  # TODO Update to OLED
-    #     full_stop()
-    #     sleep(2)
-    #     state = state_list[2]
-    #
-    #     if VCP.ir_sens_readC == 1:  # check ir sensors > if white detected
-    #         state = state_list[4]  # switch to LINE_Follow
-    #         print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    #         if VCP.US_distR >= 250:  # check US right dist > if greater than 250 check US left dist
-    #             if VCP.US_distL >= 250:  # if greater than 250
-    #                 state = state_list[2]  # reverse
-    #                 print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    # if state == 'Driving':
-    #     print("Current state is '{}'".format(state))  # TODO Update to OLED
-    #     enc.clear_count()
-    #     move_forward()
-    #     #servo_sweep()
-    #     sens_input()
-    #     if VCP.ir_sens_readL or VCP.ir_sens_readC or VCP.ir_sens_readR:
-    #         state = state_list[4]  # SWITCH TO LINE_FOLLOW
-    #         print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    #     if VCP.rgb_prox >= 5:
-    #         state = state_list[0]  # STOPS on obstacle detection
-    #         print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    #     if VCP.US_distL <= 300 or VCP.US_distR <= 300:
-    #         state = state_list[3]  # SWITCH TO WALL_FOLLOW
-    #         print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    # if state == 'Reversing':           # state 2
-    #     print("Current state is '{}'".format(state))    # TODO Update to OLED
-    #     enc.clear_count()
-    #     while VCP.encAverage <= 20:
-    #         move_backward()
-    #         # if VCP.ir_sens_readL or VCP.ir_sens_readC or VCP.ir_sens_readR:
-    #         #     state = state_list[4]  # SWITCH TO LINE_FOLLOW
-    #         #     print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #         #
-    #         # if VCP.US_distL <= 300 or VCP.US_distR <= 300:
-    #         #     state = state_list[3]  # SWITCH TO WALL_FOLLOW
-    #         #     print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #     static_pivot_l()
-    #     # if VCP.ir_sens_readC == 0:
-    #     #     if VCP.US_distF > 300:
-    #     #         state = state_list[1]
-    #     #         print("State changed to '{}'!".format(state))  # TODO Update to OLED
-    #
-    # if state == 'Wall_Follow':
-    #     print("Current state is '{}'".format(state))  # TODO Update to OLED
-    #     Left_Motor.set_forwards()
-    #     Right_Motor.set_forwards()
-    #     wall_follow()
-    #
-    # if state == 'Stopped':
-    #     full_stop()
-    #     sleep(2)
-    #     state = state_list[2]
-    #
-    #     if VCP.ir_sens_readC == 1:  # check ir sensors > if white detected
-    #         state = state_list[4]   # switch to LINE_Follow
-    #
-    #         if VCP.US_distR >= 250: # check US right dist > if greater than 250 check US left dist
-    #             if VCP.US_distL >= 250: # if greater than 250
-    #                 state = state_list[2] # reverse
