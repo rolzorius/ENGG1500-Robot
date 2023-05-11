@@ -61,23 +61,33 @@ apds9960.prox.enableSensor()    # Send I2C command to enable sensor
 # Sensors take initial values here
 def sens_input():
     VCP.US_distF = ultrasonic_sensor.distance_mm()
-    VCP.ir_sens_readL = IR_sensorL.value()
-    VCP.ir_sens_readC = IR_sensorC.value()
-    VCP.ir_sens_readR = IR_sensorR.value()
     VCP.rgb_prox = apds9960.prox.proximityLevel
+    for pos in range(0, 180, 15):
+        setServoAngle(pos)  # Set servo to desired angle
+        if pos == 15:
+            VCP.US_distR = ultrasonic_sensor.distance_mm()
+            sleep(0.2)
+        if pos == 90:
+            VCP.US_distF = ultrasonic_sensor.distance_mm()
+            sleep(0.2)
+        if pos == 165:
+            VCP.US_distL = ultrasonic_sensor.distance_mm()
+            sleep(0.2)
+    setServoAngle(90)
+    sleep(1)
 
 
-# Defines OLED init !!!!!! TODO Needs to be changed to print current state and state changes
-# def oled_init():
-#     oled.text("IRL={}".format(ir_sens_readL), 0, 0)
-#     oled.text("IRC={}".format(ir_sens_readC), 0, 20)
-#     oled.text("IRR={}".format(ir_sens_readR), 0, 40)
-#     oled.text("USL={}".format(VCP.US_distL), 56, 0)
-#     oled.text("USC={}".format(VCP.US_distF), 56, 20)
-#     oled.text("USR={}".format(VCP.US_distR), 56, 40)
-#     oled.show()  # Note: 0,0 top left, 128, 64 bottom right. 128 X 64 CORDs
-
-# !!! This section defines all movement functions
+# # Defines OLED init !!!!!! TODO Needs to be changed to print current state and state changes
+# # def oled_init():
+# #     oled.text("IRL={}".format(ir_sens_readL), 0, 0)
+# #     oled.text("IRC={}".format(ir_sens_readC), 0, 20)
+# #     oled.text("IRR={}".format(ir_sens_readR), 0, 40)
+# #     oled.text("USL={}".format(VCP.US_distL), 56, 0)
+# #     oled.text("USC={}".format(VCP.US_distF), 56, 20)
+# #     oled.text("USR={}".format(VCP.US_distR), 56, 40)
+# #     oled.show()  # Note: 0,0 top left, 128, 64 bottom right. 128 X 64 CORDs
+#
+# # !!! This section defines all movement functions
 def move_forward():         # Used for any time the bot MOVES FORWARD ONLY
     Left_Motor.set_forwards()
     Right_Motor.set_forwards()
@@ -133,38 +143,6 @@ def setServoAngle(angle):
     position = int(8000 * (angle / 180) + 1000)  # Convert angle into [1000, 9000]
     range(0, 180, 15)
     pwm_servo.duty_u16(position)
-
-
-def servo_sweep():
-    for pos in range(0, 180, 15):
-        setServoAngle(pos)  # Set servo to desired angle
-        if pos == 15:
-            VCP.US_distR = ultrasonic_sensor.distance_mm()
-            sleep(0.2)
-        if pos == 90:
-            VCP.US_distF = ultrasonic_sensor.distance_mm()
-            sleep(0.2)
-        if pos == 165:
-            VCP.US_distL = ultrasonic_sensor.distance_mm()
-            sleep(0.2)
-    sleep(1)  # Wait 50 ms to reach angle
-
-    for pos in range(180, 0, -15):
-        setServoAngle(pos)  # Set servo to desired angle
-        if pos == 15:
-            VCP.US_distR = ultrasonic_sensor.distance_mm()
-            sleep(0.2)
-        if pos == 90:
-            VCP.US_distF = ultrasonic_sensor.distance_mm()
-            sleep(0.2)
-        if pos == 165:
-            VCP.US_distL = ultrasonic_sensor.distance_mm()
-            sleep(0.2)
-    sleep(1)
-
-
-
-
 
 def wall_follow():
     Left_Motor.duty(0)
@@ -231,24 +209,25 @@ def line_follow(): # TODO this needs to be developed
 
     while True:
         sens_input()
-        if VCP.ir_sens_readL == 1:
-            Left_Motor.set_forwards()
-            Right_Motor.set_forwards()
-            Left_Motor.duty(0)
-            Right_Motor.duty(50)
 
-        elif VCP.ir_sens_readL == 1:
+        if VCP.ir_sens_readC == 1:
             move_forward()
 
-        elif VCP.ir_sens_readR == 1:
-            Left_Motor.set_forwards()
-            Right_Motor.set_forwards()
-            Left_Motor.duty(50)
-            Right_Motor.duty(0)
+            if VCP.ir_sens_readL == 1:
+                Left_Motor.set_forwards()
+                Right_Motor.set_forwards()
+                Left_Motor.duty(0)
+                Right_Motor.duty(50)
+
+
+            if VCP.ir_sens_readR == 1:
+                Left_Motor.set_forwards()
+                Right_Motor.set_forwards()
+                Left_Motor.duty(50)
+                Right_Motor.duty(0)
 
  # TODO Check this code out - test
 def Welcome_Home():     # Runs after it has Returned to where it Believes the Garage is. Should play after line ends
-    servo_sweep()
     sens_input()
     encLeft = 0
     encRight = 0
@@ -374,15 +353,15 @@ print("Current state is '{}'".format(state))    # TODO Update to OLED
 
 
 while thru_count <= 100:             # # ----- States and transition conditions ----- # #
-    servo_sweep()
     sens_input()
     print(VCP.ir_sens_readC, VCP.ir_sens_readR, VCP.ir_sens_readL)
+    print(VCP.US_distF, VCP.US_distL, VCP.US_distR)
 
     if state == 'Start':       # state 8
         sens_input()
         dir_left = 'stop'
         dir_right = 'stop'
-        sleep(3)                    # 3 seconds of nothing then
+        sleep(2)                    # 2 seconds of nothing then
         state = state_list[1]       # changes state from Stopped to Driving
         print("State changed to '{}'!".format(state))   # TODO Update to OLED
         sens_input()
@@ -406,10 +385,10 @@ while thru_count <= 100:             # # ----- States and transition conditions 
 
 
     if state == 'Driving':          # state 1
-        servo_sweep()
         sens_input()
 
         print(VCP.ir_sens_readC, VCP.ir_sens_readR, VCP.ir_sens_readL)
+        print(VCP.US_distF, VCP.US_distL, VCP.US_distR)
         print("Current state is '{}'".format(state))    # TODO Update to OLED
         dir_left = 'fwd'
         dir_right = 'fwd'
@@ -436,7 +415,7 @@ while thru_count <= 100:             # # ----- States and transition conditions 
         print("Current state is '{}'".format(state))    # TODO Update to OLED
         dir_left = 'rev'
         dir_right = 'rev'
-        if VCP.ir_sens_readL or VCP.ir_sens_readC or VCP.ir_sens_readR:
+        if VCP.ir_sens_readL == 1 or VCP.ir_sens_readC == 1 or VCP.ir_sens_readR == 1:
             state = state_list[4]  # SWITCH TO LINE_FOLLOW
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
@@ -446,7 +425,7 @@ while thru_count <= 100:             # # ----- States and transition conditions 
 
         elif VCP.ir_sens_readC == 0:
             if VCP.US_distF > 300:
-                state = state_list[1]
+                state = state_list[1] # SWITCH TO DRIVING
                 print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
         # this will initiate pivot function and turn 180.
@@ -470,52 +449,33 @@ while thru_count <= 100:             # # ----- States and transition conditions 
             print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
         if VCP.ir_sens_readC == 0:
-            if VCP.US_distL > 200 and VCP.US_distR > 200:
+            if VCP.US_distL > 150 and VCP.US_distR > 150:
                 state = state_list[1] # switch to drive
                 print("State changed to '{}'!".format(state))  # TODO Update to OLED
 
-        if VCP.rgb_prox >= 5:
-            state = state_list[0]  # STOPS on obstacle detection
-            print("State changed to '{}'!".format(state))  # TODO Update to OLED
-        action = 'wall_follow'
+        # if VCP.rgb_prox >= 5:
+        #     state = state_list[0]  # STOPS on obstacle detection
+        #     print("State changed to '{}'!".format(state))  # TODO Update to OLED
+            else:
+                action = 'wall_follow'
         sens_input()
 
 
 
     if state == 'Line_Follow':          # state 4   # TODO THIS NEEDS EXPANDING
-        servo_sweep()
         sens_input()
-
         print("Current state is '{}'".format(state))
         Left_Motor.set_forwards()
         Right_Motor.set_forwards()
-
 
         if VCP.ir_sens_readC == 0:
             if VCP.US_distL > 300 and VCP.US_distR > 300:
                 state = state_list[1]  # switch to drive
                 print("State changed to '{}'!".format(state))  # TODO Update to OLED
-
-        if VCP.rgb_prox >= 5:
-            state = state_list[0]  # STOPS on obstacle detection
-            print("State changed to '{}'!".format(state))  # TODO Update to OLED
-        action = 'line_follow'
+            else:
+                action = 'line_follow'
         sens_input()
 
-
-
-
-    # if state == 'Hallway':              # state 5
-    #     sens_input()
-    #     print("Current state is '{}'".format(state))    # TODO Update to OLED
-    #     sens_input()
-    #     # THIS NEEDS EXPANDING
-    #
-    # if state == 'Converging_Hallway':   # state 6
-    #     sens_input()
-    #     print("Current state is '{}'".format(state))    # TODO Update to OLED
-    #     sens_input()
-    #     # THIS NEEDS EXPANDING
 
     if state == 'Roundabout':           # state 7       # TODO THIS NEEDS EXPANDING
         sens_input()
@@ -528,7 +488,6 @@ while thru_count <= 100:             # # ----- States and transition conditions 
 # # ------------------------------- Start of control logic ------------------------------- # #
 
     if dir_left == 'fwd' and dir_right == 'fwd':
-        servo_sweep()
         move_forward()
 
     if dir_left == 'rev' and dir_right == 'rev':
@@ -545,12 +504,10 @@ while thru_count <= 100:             # # ----- States and transition conditions 
         sleep(1)
 
     if action == 'wall_follow':
-        servo_sweep()
         sens_input()
         wall_follow()
 
     if action == 'line_follow':
-        servo_sweep()
         sens_input()
         line_follow()
 
