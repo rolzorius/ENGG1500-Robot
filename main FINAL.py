@@ -93,8 +93,8 @@ def oled_update():
 def move_backward():
     Left_Motor.set_backwards()
     Right_Motor.set_backwards()
-    Right_Motor.duty(53)
-    Left_Motor.duty(53)
+    Right_Motor.duty(51)
+    Left_Motor.duty(55)
     sleep(0.2)
     Right_Motor.duty(0)
     Left_Motor.duty(0)
@@ -113,61 +113,44 @@ def wall_follow():
     if US_distL >= 75 and US_distR >= 75:
         crawl_S()
     elif US_distR < 75:
-        Right_Motor.duty(53)
+        Right_Motor.duty(50)
         Left_Motor.duty(0)
         sleep(0.2)
         Right_Motor.duty(0)
     elif US_distL < 75:
-        Left_Motor.duty(53)
+        Left_Motor.duty(50)
         Right_Motor.duty(0)
         sleep(0.2)
         Left_Motor.duty(0)
-    while 0 <= US_distL <= 200 and 0 <= US_distR <= 200 and 0 <= US_distF <= 150:
-        full_stop()
+
     return
 
 def crawl_S():
     US_distF = ultrasonic_sensor.distance_mm()
     Left_Motor.set_forwards()
     Right_Motor.set_forwards()
-    Right_Motor.duty(53)
+    Right_Motor.duty(51)
     Left_Motor.duty(0)
     sleep(0.2)
     Right_Motor.duty(0)
-    Left_Motor.duty(53)
-    sleep(0.2)
-    Right_Motor.duty(0)
-    Left_Motor.duty(0)
-
-def crawl_Start():
-    US_distF = ultrasonic_sensor.distance_mm()
-    Left_Motor.set_forwards()
-    Right_Motor.set_forwards()
-    Right_Motor.duty(53)
-    Left_Motor.duty(0)
-    sleep(0.2)
-    Right_Motor.duty(0)
-    Left_Motor.duty(53)
+    Left_Motor.duty(51)
     sleep(0.2)
     Right_Motor.duty(0)
     Left_Motor.duty(0)
 
 def crawl_L():
     Right_Motor.set_forwards()
-    Right_Motor.duty(53)
-    sleep(0.1)
+    Right_Motor.duty(50)
+    sleep(0.07)
     Right_Motor.duty(0)
-    sleep(0.1)
+    sleep(0.07)
 
 def crawl_R():
     Left_Motor.set_forwards()
     Left_Motor.duty(0)
-    sleep(0.1)
-    Left_Motor.duty(60)
-    sleep(0.1)
-    Left_Motor.duty(0)
-    sleep(0.1)
-
+    sleep(0.07)
+    Left_Motor.duty(50)
+    sleep(0.07)
 
 
 def line_follow():
@@ -176,22 +159,11 @@ def line_follow():
     ir_sens_readL = IR_sensorL.value()
     ir_sens_readR = IR_sensorR.value()
 
-
-    if 20 <= US_distF <= 160:
-        US_distF = ultrasonic_sensor.distance_mm()
-        Left_Motor.set_forwards()
-        Right_Motor.set_backwards()
-        Left_Motor.duty(50)
-        Right_Motor.duty(50)
-        sleep(0.75)
-        Right_Motor.duty(0)
-        Left_Motor.duty(0)
-
-    elif ir_sens_readC == 1 and ir_sens_readL == 0 and ir_sens_readR == 0:
+    if ir_sens_readC == 1 and ir_sens_readL == 0 and ir_sens_readR == 0:
         Right_Motor.set_forwards()
         Left_Motor.set_forwards()
-        Right_Motor.duty(53)
-        Left_Motor.duty(53)
+        Right_Motor.duty(50)
+        Left_Motor.duty(50)
         sleep(0.1)
         Right_Motor.duty(0)
         Left_Motor.duty(0)
@@ -200,7 +172,7 @@ def line_follow():
     elif ir_sens_readL == 1 and ir_sens_readC == 0:
         Right_Motor.set_forwards()
         Left_Motor.set_forwards()
-        Right_Motor.duty(53)
+        Right_Motor.duty(50)
         Left_Motor.duty(0)
         sleep(0.1)
         Right_Motor.duty(0)
@@ -214,7 +186,7 @@ def line_follow():
         Right_Motor.set_forwards()
         Left_Motor.set_forwards()
         Right_Motor.duty(0)
-        Left_Motor.duty(55)
+        Left_Motor.duty(50)
         sleep(0.1)
         Right_Motor.duty(0)
         Left_Motor.duty(0)
@@ -225,10 +197,10 @@ def line_follow():
 
     elif ir_sens_readC == 1 and ir_sens_readL == 1 and ir_sens_readR == 1:
         Right_Motor.set_forwards()
-        Right_Motor.duty(55)
-        sleep(0.15)
+        Right_Motor.duty(50)
+        sleep(0.12)
         Right_Motor.duty(0)
-        sleep(0.15)
+        sleep(0.12)
     elif ir_sens_readC and ir_sens_readR and ir_sens_readL == 0:
         US_distF = ultrasonic_sensor.distance_mm()
         crawl_R()
@@ -236,13 +208,11 @@ def line_follow():
         US_distF = ultrasonic_sensor.distance_mm()
         crawl_L()
 
-
-    # while 150 <= US_distF <= 500: #COM ABCK
-    #     US_distF = ultrasonic_sensor.distance_mm()
-    #     crawl_S()
-    #     oled_update()
-    #     if 10 < US_distF < 100:
-    #         full_stop()
+    if 150 <= US_distF <= 400:
+        US_distF = ultrasonic_sensor.distance_mm()
+        crawl_S()
+        if 10 < US_distF < 100:
+            full_stop()
     return
 
 
@@ -345,7 +315,7 @@ while True:  # # ----- States and transition conditions ----- # #
         if ir_sens_readL or ir_sens_readC or ir_sens_readR:
             state = state_list[3]  # SWITCH TO LINE_FOLLOW
             oled_update()
-        while 50 < US_distF <= 150:
+        elif 50 < US_distF <= 150:
             full_stop()
 
     elif state == 'Line':   # state 3
